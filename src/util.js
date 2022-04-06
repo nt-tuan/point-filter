@@ -1,0 +1,143 @@
+const getBestPoint = (points, compareFn) => {
+  if (points.length === 0) return;
+  let best = points[0];
+  for (const point of points) {
+    if (compareFn(point, best)) {
+      best = point;
+    }
+  }
+  return best;
+};
+
+const isIntersect = (y, line) => {
+  const min = Math.min(line.from.y, line.to.y);
+  const max = Math.max(line.from.y, line.to.y);
+  return y >= min && y <= max;
+};
+const getIntersectionPoint = (y, line) => {
+  const directionVector = {
+    x: line.to.x - line.from.x,
+    y: line.to.y - line.from.y,
+  };
+  if (directionVector.y === 0) {
+    return null;
+  }
+  const t = (y - line.from.y) / directionVector.y;
+  const intersectionX = line.from.x + t * directionVector.x;
+  return {
+    x: intersectionX,
+    y,
+  };
+};
+const getSegments = (y, lines) => {
+  const intersectedLines = lines.filter((line) => isIntersect(y, line));
+  const intersectionPoints = [];
+  for (const line of intersectedLines) {
+    const point = getIntersectionPoint(y, line);
+    if (point != null) {
+      intersectionPoints.push(point);
+    }
+  }
+  const sortedPoints = intersectionPoints.sort(
+    (pointA, pointB) => pointA.x - pointB.x
+  );
+  const segments = [];
+  for (let i = 1; i < sortedPoints.length; i += 2) {
+    const from = sortedPoints[i - 1];
+    const to = sortedPoints[i];
+    segments.push({ from, to });
+  }
+  return segments;
+};
+
+const defaultConfig = {
+  precision: 12,
+};
+const getConfig = (options) => {
+  return {
+    ...defaultConfig,
+    ...options,
+  };
+};
+
+const isIn2DBoundary = (value, a, b, config) => {
+  const min = Math.min(a, b);
+  const max = Math.max(a, b);
+  return value + config.precision >= min && value - config.precision <= max;
+};
+const getDistance = (point, line) => {
+  const directionVector = {
+    x: line.to.x - line.from.x,
+    y: line.to.y - line.from.y,
+  };
+  return (
+    (point.x * directionVector.x +
+      point.y * directionVector.y -
+      line.to.x * directionVector.x -
+      line.to.y * directionVector.y) /
+    Math.sqrt(
+      directionVector.x * directionVector.x +
+        directionVector.y * directionVector.y
+    )
+  );
+};
+const isPointInSegment = (point, segment, config) => {
+  const isInBoundary =
+    isIn2DBoundary(point.x, segment.from.x, segment.to.x, config) &&
+    isIn2DBoundary(point.y, segment.from.y, segment.to.y, config);
+  if (!isInBoundary) return false;
+  const distance = getDistance(point, segment);
+  return distance <= config.precision;
+};
+
+const isPointInSegments = (point, segments, config) => {
+  for (const segment of segments) {
+    const isValid = isPointInSegment(point, segment, config);
+    if (isValid) return true;
+  }
+  return false;
+};
+
+export const isInsidePolylines = (polyPoints, points, options) => {
+  const lines = [];
+  for (let i = 0; i < polyPoints.length; i++) {
+    const point = polyPoints[i];
+    const nextPoint = polyPoints[(i + 1) % polyPoints.length];
+    lines.push({
+      from: {
+        x: point.x,
+        y: point.y,
+      },
+      to: {
+        x: nextPoint.x,
+        y: nextPoint.y,
+      },
+    });
+  }
+
+  const maxYPoint = getBestPoint(
+    polyPoints,
+    (pointA, pointB) => pointA.y > pointB.y
+  ).y;
+  const minYPoint = getBestPoint(
+    polyPoints,
+    (pointA, pointB) => pointA.y < pointB.y
+  ).y;
+  const config = getConfig(options);
+
+  const segmentsList = [];
+  for (let y = minYPoint; y <= maxYPoint; y += config.precision) {
+    segmentsList.push(getSegments(y, lines));
+  }
+
+  const validPoints = [];
+  for (const point of points) {
+    for (const segments of segmentsList) {
+      if (isPointInSegments(point, segments, config)) {
+        validPoints.push(point);
+        break;
+      }
+    }
+  }
+  return validPoints;
+};
