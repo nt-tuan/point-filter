@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import React from "react";
 import { isInsidePolylines } from "../util";
-import properties from "../data/properties.json";
+import { getProperties } from "../service";
 
-const formatP = () => {
+// getCoordinates extract coordinates from properties
+const getCoordinates = (properties) => {
   const a = [];
   for (const prop of properties) {
     a.push(...prop);
@@ -14,14 +15,16 @@ const formatP = () => {
     y: prop.Coordinates[1],
   }));
 };
-const properyCoordinates = formatP();
-const useMapConvert = ({ polyPoints, mapCorner, mapPixelSize }) => {
+
+// usePropertyFilter returns polilines on the map and markers of filtered coordinates
+const usePropertyFilter = ({ polyPoints, mapCorner, mapPixelSize }) => {
+  const [properyCoordinates, setProperyCoordinates] = React.useState([]);
   const { height, width } = mapPixelSize;
   const [markers, setMarkers] = React.useState([]);
   const { leftTop, rightTop, leftBot } = mapCorner || {};
   const [coordinatesPath, setCoordinatesPath] = useState([]);
 
-  const scaleRadio = useMemo(() => {
+  const scaleRatio = useMemo(() => {
     const horizontal = (rightTop?.lng - leftTop?.lng) / width;
     const vertical = (leftBot?.lat - leftTop?.lat) / height;
     return { horizontal, vertical };
@@ -29,21 +32,25 @@ const useMapConvert = ({ polyPoints, mapCorner, mapPixelSize }) => {
 
   const convertPixelToCoordinate = useCallback(
     (canvasX, canvasY) => {
-      const x = leftTop.lng + canvasX * scaleRadio.horizontal;
-      const y = leftTop.lat + canvasY * scaleRadio.vertical;
+      const x = leftTop.lng + canvasX * scaleRatio.horizontal;
+      const y = leftTop.lat + canvasY * scaleRatio.vertical;
       return { x, y };
     },
-    [scaleRadio, leftTop]
+    [scaleRatio, leftTop]
   );
+  useEffect(() => {
+    getProperties().then((properties) => {
+      const coordinates = getCoordinates(properties);
+      setProperyCoordinates(coordinates);
+    });
+  }, []);
 
   useEffect(() => {
     // convert canvas coordinates to google-map coordinates
     const actualPoints = polyPoints.map(({ x, y }) =>
       convertPixelToCoordinate(x, y)
     );
-
     const points = isInsidePolylines(actualPoints, properyCoordinates);
-
     const newMarkers = points.map((point) => ({
       position: {
         lat: point.y,
@@ -56,9 +63,16 @@ const useMapConvert = ({ polyPoints, mapCorner, mapPixelSize }) => {
     setCoordinatesPath(
       actualPoints.map(({ x: lng, y: lat }) => ({ lng, lat }))
     );
-  }, [polyPoints, scaleRadio, convertPixelToCoordinate, rightTop, leftBot]);
+  }, [
+    polyPoints,
+    properyCoordinates,
+    scaleRatio,
+    convertPixelToCoordinate,
+    rightTop,
+    leftBot,
+  ]);
 
   return { coordinatesPath, markers };
 };
 
-export default useMapConvert;
+export default usePropertyFilter;

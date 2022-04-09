@@ -7,7 +7,7 @@ import {
 import React, { useCallback, useState } from "react";
 
 import Drawer from "../Drawer";
-import useMapConvert from "./useMapConvert";
+import usePropertyFilter from "./usePropertyFilter";
 
 const MAP_HEIGHT = 500;
 const MAP_WIDTH = 700;
@@ -53,7 +53,7 @@ function MyGmap() {
   const [map, setMap] = useState(null);
   const [mapCorner, setMapCorner] = useState(null);
   const [polyPoints, setPolyPoints] = useState([]);
-  const { coordinatesPath, markers } = useMapConvert({
+  const { coordinatesPath, markers } = usePropertyFilter({
     mapCorner,
     polyPoints,
     mapPixelSize: { width: MAP_WIDTH, height: MAP_HEIGHT },
@@ -93,7 +93,6 @@ function MyGmap() {
   };
 
   if (!isLoaded) return <span>Loading map...</span>;
-
   return (
     <div className="relative mx-10" style={{ width: MAP_WIDTH }}>
       <div style={drawerOuterStyle}>

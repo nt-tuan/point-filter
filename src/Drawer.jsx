@@ -7,6 +7,7 @@ import cl from "classnames";
 const brushRadius = 2;
 const brushColor = "#c3c3c3";
 
+// Drawer to allow user draw the boundary
 const Drawer = ({
   onDrawing,
   onDrawEnded,
@@ -78,7 +79,7 @@ const Drawer = ({
             gridColor="transparent"
             onChange={drawChange}
             ref={ref}
-            hideInterface={true}
+            lazyRadius={0}
             disabled={!isDrawing}
             brushColor={brushColor}
             canvasHeight={canvasHeight}

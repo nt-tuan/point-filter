@@ -88,12 +88,13 @@ const isPointInSegments = (point, segments, config) => {
   return false;
 };
 
-export const isInsidePolylines = (polyPoints, points) => {
+// isInsidePolylines return points which is in polygons
+export const isInsidePolylines = (polygonPoints, points) => {
   const lines = [];
-  if (polyPoints.length === 0 || points.length === 0) return [];
-  for (let i = 0; i < polyPoints.length; i++) {
-    const point = polyPoints[i];
-    const nextPoint = polyPoints[(i + 1) % polyPoints.length];
+  if (polygonPoints.length === 0 || points.length === 0) return [];
+  for (let i = 0; i < polygonPoints.length; i++) {
+    const point = polygonPoints[i];
+    const nextPoint = polygonPoints[(i + 1) % polygonPoints.length];
     lines.push({
       from: {
         x: point.x,
@@ -107,11 +108,11 @@ export const isInsidePolylines = (polyPoints, points) => {
   }
 
   const maxYPoint = getBestPoint(
-    polyPoints,
+    polygonPoints,
     (pointA, pointB) => pointA.y > pointB.y
   ).y;
   const minYPoint = getBestPoint(
-    polyPoints,
+    polygonPoints,
     (pointA, pointB) => pointA.y < pointB.y
   ).y;
   const precision = (maxYPoint - minYPoint) / 1000;
