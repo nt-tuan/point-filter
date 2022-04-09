@@ -50,16 +50,6 @@ const getSegments = (y, lines) => {
   return segments;
 };
 
-const defaultConfig = {
-  precision: 12,
-};
-const getConfig = (options) => {
-  return {
-    ...defaultConfig,
-    ...options,
-  };
-};
-
 const isIn2DBoundary = (value, a, b, config) => {
   const min = Math.min(a, b);
   const max = Math.max(a, b);
@@ -98,8 +88,9 @@ const isPointInSegments = (point, segments, config) => {
   return false;
 };
 
-export const isInsidePolylines = (polyPoints, points, options) => {
+export const isInsidePolylines = (polyPoints, points) => {
   const lines = [];
+  if (polyPoints.length === 0 || points.length === 0) return [];
   for (let i = 0; i < polyPoints.length; i++) {
     const point = polyPoints[i];
     const nextPoint = polyPoints[(i + 1) % polyPoints.length];
@@ -123,11 +114,16 @@ export const isInsidePolylines = (polyPoints, points, options) => {
     polyPoints,
     (pointA, pointB) => pointA.y < pointB.y
   ).y;
-  const config = getConfig(options);
+  const precision = (maxYPoint - minYPoint) / 1000;
+
+  const config = { precision: precision === 0 ? 0.00001 : precision };
 
   const segmentsList = [];
   for (let y = minYPoint; y <= maxYPoint; y += config.precision) {
     segmentsList.push(getSegments(y, lines));
+    if (y + config.precision > maxYPoint) {
+      segmentsList.push(getSegments(y + config.precision, lines));
+    }
   }
 
   const validPoints = [];

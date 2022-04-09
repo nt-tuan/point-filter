@@ -1,7 +1,7 @@
-import Drawer from "./Drawer";
+import Gmap from "./gmap";
 
 function App() {
-  return <Drawer />;
+  return <Gmap />;
 }
 
 export default App;
