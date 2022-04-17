@@ -5,8 +5,10 @@ import {
   useJsApiLoader,
 } from "@react-google-maps/api";
 import React, { useCallback, useState } from "react";
+import { CSSProperties } from "react";
 
 import Drawer from "../Drawer";
+import { MapCoor, MapCorner, Point } from "./types";
 import usePropertyFilter from "./usePropertyFilter";
 
 const MAP_HEIGHT = 500;
@@ -18,7 +20,7 @@ const containerStyle = {
   width: MAP_WIDTH,
 };
 
-const drawerOuterStyle = {
+const drawerOuterStyle: CSSProperties = {
   zIndex: 2,
   position: "absolute",
   top: 0,
@@ -50,25 +52,27 @@ function MyGmap() {
     googleMapsApiKey: "AIzaSyANaeBkrgp0C5otvGdhz3R1iFyrDE5JrI8",
   });
 
-  const [map, setMap] = useState(null);
-  const [mapCorner, setMapCorner] = useState(null);
-  const [polyPoints, setPolyPoints] = useState([]);
+  const [map, setMap] = useState<google.maps.Map>();
+  const [mapCorner, setMapCorner] = useState<MapCorner>();
+  const [polyPoints, setPolyPoints] = useState<Point[]>([]);
   const { coordinatesPath, markers } = usePropertyFilter({
     mapCorner,
     polyPoints,
     mapPixelSize: { width: MAP_WIDTH, height: MAP_HEIGHT },
   });
 
-  const onLoad = useCallback((map) => {
+  const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
   }, []);
 
   const onDrawing = useCallback(() => {
+    if (map == null) return;
     const bounds = map.getBounds();
+    if (bounds == null) return;
     const rightTopCorner = bounds.getNorthEast();
     const leftBottom = bounds.getSouthWest();
     const center = map.getCenter();
-
+    if (center == null) return;
     setMapCorner({
       center: { lat: center.lat(), lng: center.lng() },
       leftTop: { lat: rightTopCorner.lat(), lng: leftBottom.lng() }, // A: TAY BAC
@@ -79,13 +83,13 @@ function MyGmap() {
     setPolyPoints([]);
   }, [map]);
 
-  const onDrawEnded = useCallback((canvasPoints) => {
+  const onDrawEnded = useCallback((canvasPoints: Point[]) => {
     const shortPoints = canvasPoints.filter((p, i) => i % 2 === 0);
     setPolyPoints(shortPoints);
   }, []);
 
-  const onUnmount = useCallback((_) => {
-    setMap(null);
+  const onUnmount = useCallback(() => {
+    setMap(undefined);
   }, []);
 
   const clear = () => {

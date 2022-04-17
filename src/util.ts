@@ -1,6 +1,11 @@
-const getBestPoint = (points, compareFn) => {
+import { Point } from "./gmap/types";
+
+const getBestPoint = (
+  points: Point[],
+  compareFn: (point: Point, current: Point) => boolean
+) => {
   if (points.length === 0) return;
-  let best = points[0];
+  let best: Point = points[0];
   for (const point of points) {
     if (compareFn(point, best)) {
       best = point;
@@ -9,12 +14,20 @@ const getBestPoint = (points, compareFn) => {
   return best;
 };
 
-const isIntersect = (y, line) => {
+interface Line {
+  from: Point;
+  to: Point;
+}
+interface Config {
+  precision: number;
+}
+
+const isIntersect = (y: number, line: Line) => {
   const min = Math.min(line.from.y, line.to.y);
   const max = Math.max(line.from.y, line.to.y);
   return y >= min && y <= max;
 };
-const getIntersectionPoint = (y, line) => {
+const getIntersectionPoint = (y: number, line: Line) => {
   const directionVector = {
     x: line.to.x - line.from.x,
     y: line.to.y - line.from.y,
@@ -29,7 +42,7 @@ const getIntersectionPoint = (y, line) => {
     y,
   };
 };
-const getSegments = (y, lines) => {
+const getSegments = (y: number, lines: Line[]) => {
   const intersectedLines = lines.filter((line) => isIntersect(y, line));
   const intersectionPoints = [];
   for (const line of intersectedLines) {
@@ -50,12 +63,17 @@ const getSegments = (y, lines) => {
   return segments;
 };
 
-const isIn2DBoundary = (value, a, b, config) => {
+const isIn2DBoundary = (
+  value: number,
+  a: number,
+  b: number,
+  config: Config
+) => {
   const min = Math.min(a, b);
   const max = Math.max(a, b);
   return value + config.precision >= min && value - config.precision <= max;
 };
-const getDistance = (point, line) => {
+const getDistance = (point: Point, line: Line) => {
   const directionVector = {
     x: line.to.x - line.from.x,
     y: line.to.y - line.from.y,
@@ -71,7 +89,7 @@ const getDistance = (point, line) => {
     )
   );
 };
-const isPointInSegment = (point, segment, config) => {
+const isPointInSegment = (point: Point, segment: Line, config: Config) => {
   const isInBoundary =
     isIn2DBoundary(point.x, segment.from.x, segment.to.x, config) &&
     isIn2DBoundary(point.y, segment.from.y, segment.to.y, config);
@@ -80,7 +98,7 @@ const isPointInSegment = (point, segment, config) => {
   return distance <= config.precision;
 };
 
-const isPointInSegments = (point, segments, config) => {
+const isPointInSegments = (point: Point, segments: Line[], config: Config) => {
   for (const segment of segments) {
     const isValid = isPointInSegment(point, segment, config);
     if (isValid) return true;
@@ -89,7 +107,7 @@ const isPointInSegments = (point, segments, config) => {
 };
 
 // isInsidePolylines return points which is in polygons
-export const isInsidePolylines = (polygonPoints, points) => {
+export const isInsidePolylines = (polygonPoints: Point[], points: Point[]) => {
   const lines = [];
   if (polygonPoints.length === 0 || points.length === 0) return [];
   for (let i = 0; i < polygonPoints.length; i++) {
@@ -110,11 +128,12 @@ export const isInsidePolylines = (polygonPoints, points) => {
   const maxYPoint = getBestPoint(
     polygonPoints,
     (pointA, pointB) => pointA.y > pointB.y
-  ).y;
+  )?.y;
   const minYPoint = getBestPoint(
     polygonPoints,
     (pointA, pointB) => pointA.y < pointB.y
-  ).y;
+  )?.y;
+  if (maxYPoint == null || minYPoint == null) return [];
   const precision = (maxYPoint - minYPoint) / 1000;
 
   const config = { precision: precision === 0 ? 0.00001 : precision };

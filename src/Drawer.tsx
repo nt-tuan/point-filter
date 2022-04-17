@@ -7,6 +7,13 @@ import cl from "classnames";
 const brushRadius = 2;
 const brushColor = "#c3c3c3";
 
+interface Props {
+  onDrawing: () => void;
+  onDrawEnded: (points: { x: number; y: number }[]) => void;
+  onClear: () => void;
+  canvasHeight: number;
+  canvasWidth: number;
+}
 // Drawer to allow user draw the boundary
 const Drawer = ({
   onDrawing,
@@ -14,11 +21,11 @@ const Drawer = ({
   onClear,
   canvasHeight,
   canvasWidth,
-}) => {
+}: Props) => {
   const [actionType, setActionType] = React.useState("NONE");
   const isDrawing = actionType === "DRAWING";
 
-  const ref = React.useRef();
+  const ref = React.useRef<CanvasDraw>(null);
   const clear = () => {
     ref.current?.clear();
     onClear();
@@ -43,15 +50,12 @@ const Drawer = ({
     onDrawEnded(polyPoints);
   }, [onDrawEnded]);
 
-  const drawChange = React.useCallback(
-    (e) => {
-      drawPoints();
-      setActionType("NONE");
-    },
-    [drawPoints]
-  );
+  const drawChange = React.useCallback(() => {
+    drawPoints();
+    setActionType("NONE");
+  }, [drawPoints]);
 
-  const getToogleClass = (isToggled) => {
+  const getToogleClass = (isToggled: boolean) => {
     return cl("p-2 border mr-2 rounded", {
       "text-white": isToggled,
       "bg-blue-500": isToggled,
